@@ -1,0 +1,6 @@
+1- It continuously checks for completed asynchronous tasks and executes their callbacks without blocking the main thread.
+2- A C library that provides Node.js with the event loop, asynchronous I/O, and thread pool. 
+3- Node.js delegates tasks to OS/Libuv, then executes their callbacks when they complete.
+4- The Call Stack runs code, the Event Queue holds completed callbacks, and the Event Loop moves callbacks to the stack when it’s free.
+5- A group of threads used for heavy async tasks; its size can be set using UV_THREADPOOL_SIZE.
+6- code stops execution until finished, while non-blocking code allows other operations to run meanwhile.

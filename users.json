@@ -1,0 +1,6 @@
+[
+    {"id":1,"name":"ahmed","email":"ahmedelkholy@gmail.com","password":"98765","age":23},
+    {"id":2,"name":"rabe3","email":"rabe3@gmai.com","password":"12345","age":34},
+    {"id":3,"name":"3laa","email":"3laa@gmai.com","password":"12345","age":21},
+    {"id":4,"name":"abdomomya","email":"abdomomya@gmai.com","password":"12345","age":56}
+]
