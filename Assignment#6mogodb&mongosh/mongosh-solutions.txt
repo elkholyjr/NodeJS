@@ -1,0 +1,89 @@
+// 1. Explicit "books" collection with non-empty title validation
+db.createCollection("books", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["title"],
+      properties: {
+        title: { bsonType: "string", minLength: 1, description: "title must be a non-empty string" }
+      }
+    }
+  },
+  validationLevel: "strict",
+  validationAction: "error"
+});
+
+// If books already exists, apply/update the validator instead:
+// db.runCommand({ collMod: "books", validator: { $jsonSchema: { bsonType: "object", required: ["title"], properties: { title: { bsonType: "string", minLength: 1 } } } }, validationLevel: "strict", validationAction: "error" });
+
+// 2. Implicit "authors" collection by inserting a document
+db.collection("authors").insertOne({ name: "Author1", nationality: "British" });
+
+// 3. Capped "logs" collection, 1 MiB
+db.createCollection("logs", { capped: true, size: 1024 * 1024 });
+
+// 4. Index on books.title
+db.books.createIndex({ title: 1 });
+
+// 5. Insert one book
+db.books.insertOne({
+  title: "BookA",
+  author: "Ali",
+  year: 1931,
+  genres: ["Fantasy", "Adventure"]
+});
+
+// 6. Insert at least three books
+db.books.insertMany([
+  { title: "Future", author: "George Orwell", year: 2020, genres: ["Science Fiction"] },
+  { title: "To Kill a Mockingbird", author: "Harper Lee", year: 1960, genres: ["Classic", "Fiction"] },
+  { title: "Brave New World", author: "Aldous Huxley", year: 2006, genres: ["Dystopian", "Science Fiction"] }
+]);
+
+// 7. Insert a log (book_id should ideally be an ObjectId matching a book _id)
+const book = db.books.findOne({ title: "Future" });
+db.logs.insertOne({ book_id: book ? book._id : ObjectId(), action: "borrowed" });
+
+// 8. Update "Future" to year 2022
+db.books.updateOne({ title: "Future" }, { $set: { year: 2022 } });
+
+// 9. Find book by title
+db.books.findOne({ title: "Brave New World" });
+
+// 10. Books published from 1990 through 2010 (inclusive)
+db.books.find({ year: { $gte: 1990, $lte: 2010 } });
+
+// 11. Books with "Science Fiction" in genres
+db.books.find({ genres: "Science Fiction" });
+
+// 12. Skip first two, return next three, year descending
+db.books.find().sort({ year: -1 }).skip(2).limit(3);
+
+// 13. Year stored as an integer (BSON int)
+db.books.find({ year: { $type: "int" } });
+
+// 14. Exclude books whose genres contain either Horror or Science Fiction
+db.books.find({ genres: { $nin: ["Horror", "Science Fiction"] } });
+
+// 15. Delete all books published before 2000
+db.books.deleteMany({ year: { $lt: 2000 } });
+
+// 16. Aggregation: books after 2000 sorted by year descending
+db.books.aggregate([
+  { $match: { year: { $gt: 2000 } } },
+  { $sort: { year: -1 } }
+]);
+
+// 17. Aggregation: books after 2000, only title/author/year
+db.books.aggregate([
+  { $match: { year: { $gt: 2000 } } },
+  { $project: { _id: 0, title: 1, author: 1, year: 1 } }
+]);
+
+// 18. Unwind genres into separate documents
+db.books.aggregate([{ $unwind: "$genres" }]);
+
+// 19. Join books with logs. For reliable matching, log.book_id must have the same BSON type as books._id.
+db.books.aggregate([
+  { $lookup: { from: "logs", localField: "_id", foreignField: "book_id", as: "logs" } }
+]);
